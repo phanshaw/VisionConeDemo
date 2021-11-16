@@ -1,47 +1,35 @@
 #ifndef VISION_CONE_DEPTH_INCLUDED
 #define VISION_CONE_DEPTH_INCLUDED
 
-#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
+// This is a stripped down version of DepthOnlyPass.hlsl for the purposes of rendering the vision cone occluders.
 
-float4x4 unity_MatrixVP;
-float4x4 unity_ObjectToWorld;
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-#define UNITY_MATRIX_M unity_ObjectToWorld
-
-#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/UnityInstancing.hlsl"
-
-struct VertexInput 
+struct Attributes
 {
-	float4 pos : POSITION;
+	float4 position     : POSITION;
 	UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
-struct VertexOutput 
+struct Varyings
 {
-	float4 clipPos : SV_POSITION;
+	float4 positionCS   : SV_POSITION;
+	UNITY_VERTEX_INPUT_INSTANCE_ID
+	UNITY_VERTEX_OUTPUT_STEREO
 };
 
-VertexOutput ShadowCasterPassVertex (VertexInput input) 
+Varyings DepthOnlyVertex(Attributes input)
 {
-	VertexOutput output;
+	Varyings output = (Varyings)0;
 	UNITY_SETUP_INSTANCE_ID(input);
-	float4 worldPos = mul(UNITY_MATRIX_M, float4(input.pos.xyz, 1.0));
-	output.clipPos = mul(unity_MatrixVP, worldPos);
-
-	float bias = 0.005;
-	#if UNITY_REVERSED_Z
-	output.clipPos.z -= bias;
-	output.clipPos.z = min(output.clipPos.z, output.clipPos.w * UNITY_NEAR_CLIP_VALUE);
-	#else
-	output.clipPos.z += bias;
-	output.clipPos.z = max(output.clipPos.z, output.clipPos.w * UNITY_NEAR_CLIP_VALUE);
-	#endif
-	
+	UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
+	output.positionCS = TransformObjectToHClip(input.position.xyz);
 	return output;
 }
 
-float4 ShadowCasterPassFragment (VertexOutput input) : SV_TARGET 
+half4 DepthOnlyFragment(Varyings input) : SV_TARGET
 {
+	UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 	return 0;
 }
 

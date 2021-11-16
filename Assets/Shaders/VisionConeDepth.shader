@@ -22,8 +22,8 @@ Shader "Hidden/VisionConeDepth"
 			
 			#pragma multi_compile_instancing
 			
-			#pragma vertex ShadowCasterPassVertex
-			#pragma fragment ShadowCasterPassFragment
+			#pragma vertex DepthOnlyVertex
+			#pragma fragment DepthOnlyFragment
 			
 			#include "VisionConeDepthPass.hlsl"
 			

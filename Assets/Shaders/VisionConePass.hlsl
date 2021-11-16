@@ -4,8 +4,10 @@
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
+// Note this matches the define in VisionConeShaderConstants.cs
 #define MAX_VISION_CONE_COUNT 16
 
+// TODO Structured buffer might be better here.
 struct VisionConeData
 {
     int enabled;
@@ -14,6 +16,7 @@ struct VisionConeData
     float3 posWS;
     float3 dirWS;
     float4 color;
+    float4 zBufferParams;
 };
 
 float4x4 _WorldToVisionConeMatrices[MAX_VISION_CONE_COUNT];
@@ -21,6 +24,7 @@ float4 _packedDataEnabledRadArc[MAX_VISION_CONE_COUNT];
 float4 _conePosArray[MAX_VISION_CONE_COUNT];
 float4 _coneDirArray[MAX_VISION_CONE_COUNT];
 float4 _coneColorArray[MAX_VISION_CONE_COUNT];
+float4 _visionConeZBufferParams[MAX_VISION_CONE_COUNT];
 
 // for fast world space reconstruction
 uniform float4x4 _FrustumCornersWS;
@@ -34,8 +38,8 @@ TEXTURE2D(_CameraDepthTexture);
 SAMPLER(sampler_CameraDepthTexture);
 float4 _CameraDepthTexture_TexelSize;
 
-TEXTURE2D_ARRAY_SHADOW(_VisionConeDepthTexture);
-SAMPLER_CMP(sampler_VisionConeDepthTexture);
+TEXTURE2D(_VisionConeDepthTexture);
+SAMPLER(sampler_VisionConeDepthTexture);
 
 VisionConeData GetGameplayVisionConeData(int i)
 {
@@ -43,18 +47,30 @@ VisionConeData GetGameplayVisionConeData(int i)
     ret.enabled = _packedDataEnabledRadArc[i].x;
     ret.radius = _packedDataEnabledRadArc[i].y;
     ret.arcAngle = _packedDataEnabledRadArc[i].z;
-    ret.posWS = _conePosArray[i];
-    ret.dirWS = _coneDirArray[i];
+    ret.posWS = _conePosArray[i].xyz;
+    ret.dirWS = _coneDirArray[i].xyz;
     ret.color = _coneColorArray[i];
+    ret.zBufferParams = _visionConeZBufferParams[i];
     return ret;
 }
 
-float SampleVisionConeVisibility(int i, float3 worldPos)
+float SampleVisionConeDepth(int index, float3 worldPos)
 {
-    float4 shadowCoord = mul(_WorldToVisionConeMatrices[i], float4(worldPos, 1.0));
-    shadowCoord.xyz /= shadowCoord.w;
-    float attenuation = SAMPLE_TEXTURE2D_ARRAY_SHADOW(_VisionConeDepthTexture, sampler_VisionConeDepthTexture, shadowCoord.xyz, i);
-    return attenuation;
+    // https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
+    // Basically seeing if our current depth is higher than our sampled depth. 
+    float4 shadowPos = mul(_WorldToVisionConeMatrices[index], float4(worldPos, 1.0));
+    shadowPos.xyz /= shadowPos.w;
+    
+    float closestDepth = SAMPLE_TEXTURE2D_X(_VisionConeDepthTexture, sampler_VisionConeDepthTexture, shadowPos.xy).r;
+
+    // TODO: Quick depth bias here, could be a property.
+    float currentDepth = shadowPos.z + 0.0001;
+    return currentDepth >= closestDepth  ? 1.0 : 0.0;  
+}
+
+float ATan2Nrm(float a, float b)
+{
+    return (atan2(a, b) + PI) / (PI * 2);
 }
     
 struct Attributes
@@ -82,7 +98,6 @@ Varyings Vertex(Attributes input)
     output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
     output.uv = input.texcoord;
     output.uv_depth = input.texcoord.xy;
-    	
     output.interpolatedRay = _FrustumCornersWS[output.uv.x + 2 * output.uv.y];
     	
     return output;
@@ -90,15 +105,18 @@ Varyings Vertex(Attributes input)
 
 float4 VisionConesFrag (Varyings input) : SV_Target
 {
-    float rawDepth = SAMPLE_TEXTURE2D_X(_CameraDepthTexture, sampler_CameraDepthTexture, input.uv);
+    float rawDepth = SAMPLE_TEXTURE2D_X(_CameraDepthTexture, sampler_CameraDepthTexture, input.uv_depth).r;
     float dpth = Linear01Depth(rawDepth, _ZBufferParams);
-    float3 posWS = _CameraWS + (dpth * input.interpolatedRay);
+    float3 posWS = _CameraWS.xyz + (dpth * input.interpolatedRay.xyz);
 
     float contribution = 0;
-
+    [unroll(MAX_VISION_CONE_COUNT)] 
     for(int i = 0; i < MAX_VISION_CONE_COUNT; i++)
     {
         VisionConeData data = GetGameplayVisionConeData(i);
+        if(data.enabled == 0)
+            continue;
+        
         float3 decalPosWS = data.posWS.xyz;
         float3 relPos = decalPosWS - posWS;
         
@@ -114,15 +132,22 @@ float4 VisionConesFrag (Varyings input) : SV_Target
         }
 
         // cosine between those two angles
-        float dp = dot(normalize(relPos2D.xyz), normalize(-data.dirWS.xyz));
+        float dp = dot(normalize(relPos2D.xyz), normalize(-dir2D));
 
         // get angle from the cosine from 0 (180) to 1 (90)
         float dp_angle = acos(dp) / PI;
         float data_angle = data.arcAngle / 360.0;
+
+        // Now step it to get a mask of our cone shape. 
         float angleMask = step(dp_angle, data_angle);
 
-        //float occluded = 1-SampleVisionConeVisibility(i, posWS);
-        contribution = max(contribution, saturate(angleMask));// max(contribution, result);
+        // Add some nice details on the outer edge of the vision cone
+        float u = ATan2Nrm(relPos.x, relPos.z);
+        float dashedRing = step(0.6, frac(u * 100)) * step(1-v, 0.01) * angleMask;
+        float occluded = SampleVisionConeDepth(i, posWS);
+        float result = saturate(dashedRing + angleMask * occluded * (1-v));
+        
+        contribution = max(contribution, result);
     }
 
     return contribution; // contribution * float4(1, 0, 0, 1);

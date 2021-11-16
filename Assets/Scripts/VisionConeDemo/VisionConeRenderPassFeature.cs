@@ -52,14 +52,15 @@ namespace VisionConeDemo
 
             private Material _depthPassMaterial;
             private Material _renderPassMaterial;
-            RenderTexture m_visionConeDepthArray;
-            RenderTargetHandle m_visionConeOccluderAtlasHandle;
+            RenderTexture m_visionConeDepthTexture;
+            RenderTargetHandle m_visionConeDepthTextureID;
 
             private Matrix4x4[] worldToVisionConeMatrices;
             private Vector4[] packedDataEnabledRadArc;
             private Vector4[] conePosArray;
             private Vector4[] coneDirArray;
             private Vector4[] coneColorArray;
+            private Vector4[] visionConeZBufferParamsArray;
             
             private Camera _proxyCamera = null;
             private readonly int _layerFlags;
@@ -70,19 +71,20 @@ namespace VisionConeDemo
                 _renderPassMaterial = renderPassMaterial;
                 
                 _layerFlags = settings.visionConeOccluderLayers;
-                m_visionConeOccluderAtlasHandle = new RenderTargetHandle();
-                m_visionConeOccluderAtlasHandle.Init("_VisionConeDepthTexture");
+                m_visionConeDepthTextureID = new RenderTargetHandle();
+                m_visionConeDepthTextureID.Init("_VisionConeDepthTexture");
 
                 m_depthTextureSize = settings.quality switch
                 {
-                    VisionConeQuality.low => 256,
-                    VisionConeQuality.medium => 512,
-                    VisionConeQuality.high => 1024,
+                    VisionConeQuality.low => 512,
+                    VisionConeQuality.medium => 1024,
+                    VisionConeQuality.high => 2048,
                     _ => throw new ArgumentOutOfRangeException()
                 };
 
                 m_visionConeData = new VisionConeData[VisionConeShaderConstants.MAX_VISION_CONES];
                 worldToVisionConeMatrices = new Matrix4x4[VisionConeShaderConstants.MAX_VISION_CONES];
+                visionConeZBufferParamsArray = new Vector4[VisionConeShaderConstants.MAX_VISION_CONES];
 
                 packedDataEnabledRadArc = new Vector4[VisionConeShaderConstants.MAX_VISION_CONES];
                 conePosArray = new Vector4[VisionConeShaderConstants.MAX_VISION_CONES];
@@ -123,14 +125,11 @@ namespace VisionConeDemo
 
             public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
             {
-                m_visionConeDepthArray = RenderTexture.GetTemporary(m_depthTextureSize, m_depthTextureSize, 16, RenderTextureFormat.Depth);
-                m_visionConeDepthArray.dimension = TextureDimension.Tex2DArray;
-                m_visionConeDepthArray.volumeDepth = VisionConeShaderConstants.MAX_VISION_CONES;
-                
-                m_visionConeDepthArray.filterMode = FilterMode.Point;
-                m_visionConeDepthArray.wrapMode = TextureWrapMode.Clamp;
+                m_visionConeDepthTexture = RenderTexture.GetTemporary(m_depthTextureSize, m_depthTextureSize, 16, RenderTextureFormat.Depth);
+                m_visionConeDepthTexture.filterMode = FilterMode.Bilinear;
+                m_visionConeDepthTexture.wrapMode = TextureWrapMode.Clamp;
 
-                ConfigureTarget(m_visionConeDepthArray);
+                ConfigureTarget(m_visionConeDepthTexture);
                 ConfigureClear(ClearFlag.All, Color.black);
             }
 
@@ -143,7 +142,7 @@ namespace VisionConeDemo
                     
                     for (var i = 0; i < VisionConeShaderConstants.MAX_VISION_CONES; i++)
                     {
-                        if (_proxyCamera == null)
+                        if(_proxyCamera == null)
                             continue;
 
                         var data = m_visionConeData[i];
@@ -152,24 +151,47 @@ namespace VisionConeDemo
                             worldToVisionConeMatrices[i] = Matrix4x4.zero;
                             continue;
                         }
-                        
-                        packedDataEnabledRadArc[i] = new Vector3(data.Enabled, data.Radius, data.FOVDegrees);
-                        conePosArray[i] = data.PositionWS;
-                        coneDirArray[i] = data.Direction;
-                        coneColorArray[i] = data.ConeColor;
+
+                        var pos = data.PositionWS;
+                        var rot = Quaternion.LookRotation(data.Direction, Vector3.up);
+                        var fov = data.FOVDegrees;
+                        var range = data.Radius;
 
                         var t = _proxyCamera.transform;
-                        t.position = data.PositionWS;
-                        t.rotation = Quaternion.Euler(data.Direction);
-      
-                        var tan = Vector3.Cross(data.Direction, Vector3.up);
-                        var up = Vector3.Cross(tan, data.Direction);
+                        t.position = pos;
+                        t.rotation = rot;
+                        _proxyCamera.fieldOfView = fov;
+                        _proxyCamera.nearClipPlane = 0.1f;
+                        _proxyCamera.farClipPlane = range;
                         
-                        var lookMatrix = Matrix4x4.LookAt(data.PositionWS, data.PositionWS + data.Direction, up);
+                        var success = _proxyCamera.TryGetCullingParameters(false, out var cp);
+                        if(!success)
+                            continue;
+                        
+                        var proxyCullResults = context.Cull(ref cp);
+
+                        // Create an atlas slice - this is based off of Jasper Flick's catlike coding overview of spotlight shadows
+                        // and uses a similar approach as the unity URP additional lights shadows. 
+                        // https://catlikecoding.com/unity/tutorials/scriptable-render-pipeline/spotlight-shadows/
+                        var lookMatrix = Matrix4x4.LookAt(pos, pos + t.forward, t.up);
                         var scaleMatrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(1, 1, -1));
                         var viewMatrix = scaleMatrix * lookMatrix.inverse;
+
+                        var tileRowColumCount = 4;
+                        float tileSize = m_depthTextureSize / tileRowColumCount;
+                        float tileOffsetX = i % tileRowColumCount;
+                        float tileOffsetY = i / tileRowColumCount;
+                        var tileViewport = new Rect(tileOffsetX * tileSize, tileOffsetY * tileSize, tileSize, tileSize);
+                        var scissorRect = new Rect(
+                            tileViewport.x + 4f, tileViewport.y + 4f,
+                            tileSize - 8f, tileSize - 8f
+                        );
                         
-                        var projectionMatrix = Matrix4x4.Perspective(data.FOVDegrees, 1, 0.01f, data.Radius);
+                        var scaleOffset = Matrix4x4.identity;
+                        scaleOffset.m00 = scaleOffset.m11 = scaleOffset.m22 = 0.5f;
+                        scaleOffset.m03 = scaleOffset.m13 = scaleOffset.m23 = 0.5f;
+                        
+                        var projectionMatrix = _proxyCamera.projectionMatrix;
                         if (SystemInfo.usesReversedZBuffer) 
                         {
                             projectionMatrix.m20 = -projectionMatrix.m20;
@@ -178,48 +200,54 @@ namespace VisionConeDemo
                             projectionMatrix.m23 = -projectionMatrix.m23;
                         }
                         
-                        var scaleOffset = Matrix4x4.identity;
-                        scaleOffset.m00 = scaleOffset.m11 = scaleOffset.m22 = 0.5f;
-                        scaleOffset.m03 = scaleOffset.m13 = scaleOffset.m23 = 0.5f;
+                        // Used later on to transform our wsPos into the vision cone depth map space. 
+                        var tileMatrix = Matrix4x4.identity;
+                        tileMatrix.m00 = tileMatrix.m11 = 0.25f;
+                        tileMatrix.m03 = tileOffsetX * 0.25f;
+                        tileMatrix.m13 = tileOffsetY * 0.25f;
+                        worldToVisionConeMatrices[i] = tileMatrix * (scaleOffset * (projectionMatrix * viewMatrix));
                         
-                        var worldToShadowMatrix = scaleOffset * (projectionMatrix * viewMatrix);
+                        // See Common.hlsl
+                        // zBufferParam = { (f-n)/n, 1, (f-n)/n*f, 1/f }
+                        var far = _proxyCamera.farClipPlane;
+                        var near = _proxyCamera.nearClipPlane;
+                        var x = (far-near) / near;
+                        var y = 1;
+                        var z = (far-near) / near * far;
+                        var w = 1 / far;
+                        visionConeZBufferParamsArray[i] = new Vector4(x, y, z, w);
+                        
+                        // Pack the vision cone data
+                        packedDataEnabledRadArc[i] = new Vector3(data.Enabled, data.Radius, data.FOVDegrees);
+                        conePosArray[i] = pos;
+                        coneDirArray[i] = data.Direction;
+                        coneColorArray[i] = data.ConeColor;
 
-                        cmd.SetViewProjectionMatrices(viewMatrix, projectionMatrix);
+                        cmd.SetViewport(tileViewport);
+                        cmd.EnableScissorRect(scissorRect);
+                        
+                        cmd.SetViewProjectionMatrices(viewMatrix, _proxyCamera.projectionMatrix);
                         context.ExecuteCommandBuffer(cmd);
                         cmd.Clear();
-
-                        worldToVisionConeMatrices[i] = worldToShadowMatrix;
 
                         var sortFlags = renderingData.cameraData.defaultOpaqueSortFlags;
                         var drawSettings = CreateDrawingSettings(m_ShaderTagIdList, ref renderingData, sortFlags);
                         drawSettings.overrideMaterial = _depthPassMaterial;
-
-                        cmd.SetRenderTarget(m_visionConeDepthArray, 0, CubemapFace.Unknown, i);
                         
-                        // We use the proxy camera for culling to get a list of renderers appropriate to this vision cone.
-                        _proxyCamera.fieldOfView = data.FOVDegrees;
-                        _proxyCamera.nearClipPlane = 0.01f;
-                        _proxyCamera.farClipPlane = data.Radius;
-                        _proxyCamera.aspect = 1;
-                        var success = _proxyCamera.TryGetCullingParameters(false, out var cp);
-                        if (!success)
-                            continue;
-                        var proxyCullResults = context.Cull(ref cp);
-                        context.DrawRenderers(proxyCullResults, ref drawSettings, ref m_FilteringSettings,
-                            ref m_RenderStateBlock);
+                        context.DrawRenderers(proxyCullResults, ref drawSettings, ref m_FilteringSettings, ref m_RenderStateBlock);
                         
-                        context.ExecuteCommandBuffer(cmd);
-                        cmd.Clear();
+                        cmd.DisableScissorRect();
                     }
                 }
 
                 // Set the arrays so they can be read by the vision cone material. 
-                _renderPassMaterial.SetMatrixArray(VisionConeShaderConstants.worldToVisionConeMatricesId, worldToVisionConeMatrices);
+                _renderPassMaterial.SetMatrixArray(VisionConeShaderConstants.worldToVisionConeMatricesID, worldToVisionConeMatrices);
                 _renderPassMaterial.SetVectorArray(VisionConeShaderConstants.packedDataEnabledRadArcID, packedDataEnabledRadArc);
                 _renderPassMaterial.SetVectorArray(VisionConeShaderConstants.conePosArrayID, conePosArray);
                 _renderPassMaterial.SetVectorArray(VisionConeShaderConstants.coneDirArrayID, coneDirArray);
                 _renderPassMaterial.SetVectorArray(VisionConeShaderConstants.coneColorArrayID, coneColorArray);
-                _renderPassMaterial.SetTexture(m_visionConeOccluderAtlasHandle.id, m_visionConeDepthArray);
+                _renderPassMaterial.SetVectorArray(VisionConeShaderConstants.visionConeZBufferParamsID, visionConeZBufferParamsArray);
+                _renderPassMaterial.SetTexture(m_visionConeDepthTextureID.id, m_visionConeDepthTexture);
 
                 context.ExecuteCommandBuffer(cmd);
                 cmd.Clear();
@@ -239,10 +267,10 @@ namespace VisionConeDemo
                 if (cmd == null)
                     throw new ArgumentNullException("cmd");
                 
-                if (m_visionConeDepthArray)
+                if (m_visionConeDepthTexture)
                 {
-                    RenderTexture.ReleaseTemporary(m_visionConeDepthArray);
-                    m_visionConeDepthArray = null;
+                    RenderTexture.ReleaseTemporary(m_visionConeDepthTexture);
+                    m_visionConeDepthTexture = null;
                 }
             }
         }
@@ -252,9 +280,8 @@ namespace VisionConeDemo
             private string m_ProfilerTag = "RenderVisionCones";
             private Material m_overrideMaterial;
 
-            public VisionConeRenderPass(VisionConeRenderSettings settings, Material overrideMaterial)
+            public VisionConeRenderPass(Material overrideMaterial)
             {
-                Debug.Assert(settings.visionConePassShader != null, $"Vision Cone Settings had null shader reference. This will result in rendering errors.");
                 m_overrideMaterial = overrideMaterial;                
             }
 
@@ -290,6 +317,7 @@ namespace VisionConeDemo
                     
                     RenderTargetIdentifier src = BuiltinRenderTextureType.CameraTarget;
                     RenderTargetIdentifier dst = BuiltinRenderTextureType.CurrentActive;
+
                     cmd.Blit(src, dst, m_overrideMaterial);
                     cmd.SetRenderTarget(dst);
                 }
@@ -321,7 +349,7 @@ namespace VisionConeDemo
             m_visionConeRenderMaterial = new Material(settings.visionConePassShader);
             
             _visionConeOccluderPass = new VisionConeOccluderPass(settings, m_visionConeDepthMaterial, m_visionConeRenderMaterial);
-            _visionConeRenderPass = new VisionConeRenderPass(settings, m_visionConeRenderMaterial);
+            _visionConeRenderPass = new VisionConeRenderPass(m_visionConeRenderMaterial);
 
             // Configures where the render pass should be injected.
             _visionConeOccluderPass.renderPassEvent = RenderPassEvent.AfterRenderingOpaques;
