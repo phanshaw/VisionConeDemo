@@ -52,15 +52,15 @@
     <ImplicitlyExpandDesignTimeFacades>false</ImplicitlyExpandDesignTimeFacades>
   </PropertyGroup>
   <ItemGroup>
-     <Compile Include="Assets\Scripts\VisionConeDemo\VisionConeShaderConstants.cs" />
-     <Compile Include="Assets\Scripts\VisionConeDemo\VisionConeComponent.cs" />
+     <Compile Include="Assets\Scripts\VisionCone\VisionConeShaderConstants.cs" />
+     <Compile Include="Assets\Scripts\VisionCone\VisionConeComponent.cs" />
      <Compile Include="Assets\TutorialInfo\Scripts\Readme.cs" />
      <Compile Include="Assets\Scripts\SimpleCameraController.cs" />
-     <Compile Include="Assets\Scripts\VisionConeDemo\VisionConeRenderPassFeature.cs" />
-     <Compile Include="Assets\Scripts\VisionConeDemo\VisionConeBuffers.cs" />
-     <Compile Include="Assets\Scripts\VisionConeDemo\VisionConeManager.cs" />
-     <Compile Include="Assets\Scripts\VisionConeDemo\VisionConeDepthPass.cs" />
-     <Compile Include="Assets\Scripts\VisionConeDemo\VisionConeData.cs" />
+     <Compile Include="Assets\Scripts\SO\SecurityCameraConfig.cs" />
+     <Compile Include="Assets\Scripts\SecurityCameraController.cs" />
+     <Compile Include="Assets\Scripts\VisionCone\VisionConeRenderPassFeature.cs" />
+     <Compile Include="Assets\Scripts\VisionCone\VisionConeManager.cs" />
+     <Compile Include="Assets\Scripts\VisionCone\VisionConeData.cs" />
      <None Include="Assets\Shaders\VisionConeShader.shader" />
      <None Include="Assets\Shaders\VisionConePass.hlsl" />
      <None Include="Assets\Shaders\VisionConeDepth.shader" />

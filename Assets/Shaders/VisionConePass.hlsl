@@ -109,12 +109,12 @@ float4 VisionConesFrag (Varyings input) : SV_Target
     float dpth = Linear01Depth(rawDepth, _ZBufferParams);
     float3 posWS = _CameraWS.xyz + (dpth * input.interpolatedRay.xyz);
 
-    float contribution = 0;
+    float4 contribution = 0;
     [unroll(MAX_VISION_CONE_COUNT)] 
     for(int i = 0; i < MAX_VISION_CONE_COUNT; i++)
     {
         VisionConeData data = GetGameplayVisionConeData(i);
-        if(data.enabled == 0)
+        if(data.enabled < 0.5)
             continue;
         
         float3 decalPosWS = data.posWS.xyz;
@@ -131,6 +131,9 @@ float4 VisionConesFrag (Varyings input) : SV_Target
             continue;
         }
 
+        // vertical falloff
+        float t = saturate(relPos.y / 2);
+
         // cosine between those two angles
         float dp = dot(normalize(relPos2D.xyz), normalize(-dir2D));
 
@@ -144,10 +147,11 @@ float4 VisionConesFrag (Varyings input) : SV_Target
         // Add some nice details on the outer edge of the vision cone
         float u = ATan2Nrm(relPos.x, relPos.z);
         float dashedRing = step(0.6, frac(u * 100)) * step(1-v, 0.01) * angleMask;
+        float inner_mask = step(v, 0.05);
         float occluded = SampleVisionConeDepth(i, posWS);
-        float result = saturate(dashedRing + angleMask * occluded * (1-v));
+        float result = saturate((dashedRing + angleMask * occluded * (1-v) * t) - inner_mask);
         
-        contribution = max(contribution, result);
+        contribution = max(contribution, result * data.color);
     }
 
     return contribution; // contribution * float4(1, 0, 0, 1);

@@ -8,17 +8,11 @@ namespace VisionConeDemo
 {
     public class VisionConeComponent : MonoBehaviour
     {
-        [SerializeField] 
-        [Range(0.1f, 15f)]
-        private float radius;
-
-        [SerializeField] 
-        [Range(5f, 180f)]
-        private float fovDegrees;
-
-        [SerializeField] 
-        private Transform viewpointTransform;
-
+        public float Radius { get; set; } = 5;
+        public float FovDegrees { get; set; } = 45;
+        public Transform viewpointTransform;
+        public Color currentColor = Color.white;
+        
         void RegisterVisionConeComponent()
         {
             VisionConeManager.Get.RegisterVisionCone(this);
@@ -31,7 +25,8 @@ namespace VisionConeDemo
 
         public VisionConeData GetData()
         {
-            return new VisionConeData(true, radius, fovDegrees, viewpointTransform.position, viewpointTransform.forward);
+            var t = viewpointTransform ? viewpointTransform : transform;
+            return new VisionConeData(true, Radius, FovDegrees, t.position, t.forward, currentColor);
         }
 
         private void Start()
@@ -54,14 +49,15 @@ namespace VisionConeDemo
         private void OnDrawGizmosSelected()
         {
             // This draws the arc from the feet, which is the intended rendering of the 2.5d vision cones.
-            var t = viewpointTransform;
+
+            var t = viewpointTransform != null ? viewpointTransform : transform;
             var pos = t.position;
             pos.y = transform.position.y; // Floor it
-            Handles.Label(pos, $"Debug Vision Cone: Rad {radius} FOV {fovDegrees}");
+            Handles.Label(pos, $"Debug Vision Cone: Rad {Radius} FOV {FovDegrees}");
 
             Handles.color = new Color(1f, 0, 0, 0.1f);
-            var centeredForward = Quaternion.AngleAxis(-fovDegrees * 0.5f, Vector3.up) * t.forward;
-            Handles.DrawSolidArc(pos, t.up, centeredForward, fovDegrees, radius);
+            var centeredForward = Quaternion.AngleAxis(-FovDegrees * 0.5f, Vector3.up) * t.forward;
+            Handles.DrawSolidArc(pos, t.up, centeredForward, FovDegrees, Radius);
         }
 #endif
     }
