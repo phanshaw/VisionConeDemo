@@ -80,7 +80,7 @@ public class SecurityCameraController : MonoBehaviour
 
     void HandleTransitionToAlert()
     {
-        _transitionTimer++;
+        _transitionTimer += Time.deltaTime;
         var t = _transitionTimer / settings.durationSeekToAlert;
         var curveValue = settings.seekToAlertAnimationCurve.Evaluate(t);
         
@@ -97,7 +97,7 @@ public class SecurityCameraController : MonoBehaviour
 
     void HandleTransitionToSeek()
     {
-        _transitionTimer++;
+        _transitionTimer += Time.deltaTime;
         var t = _transitionTimer / settings.durationSeekToAlert;
 
         if (t >= 1)
@@ -171,24 +171,8 @@ public class SecurityCameraController : MonoBehaviour
 
     private void UpdateVisionConeValues()
     {
-        switch (_state)
-        {
-            case SecurityCameraState.Seeking:
-                _visionConeComponent.Radius = _currentRadius;
-                _visionConeComponent.FovDegrees = _currentFOV;
-                _visionConeComponent.currentColor = _currentColor;
-                break;
-            case SecurityCameraState.TransitionSeekToAlert:
-                break;
-            case SecurityCameraState.Alert:
-                _visionConeComponent.Radius = settings.radiusAlert;
-                _visionConeComponent.FovDegrees = settings.fovDegreeAlert;
-                _visionConeComponent.currentColor = settings.colorAlert;
-                break;
-            case SecurityCameraState.TransitionAlertToSeek:
-                break;
-            default:
-                throw new ArgumentOutOfRangeException();
-        }
+        _visionConeComponent.Radius = _currentRadius;
+        _visionConeComponent.FovDegrees = _currentFOV;
+        _visionConeComponent.currentColor = _currentColor;
     }
 }
