@@ -65,8 +65,8 @@ MonoBehaviour:
   rotationSpeed: 0.5
   rotationDegrees: 45
   radiusSeeking: 4
-  fovDegreeSeeking: 55
+  fovDegreeSeeking: 90
   radiusAlert: 8
-  fovDegreeAlert: 15
+  fovDegreeAlert: 90
   colorSeeking: {r: 0, g: 0.23584908, b: 0, a: 0.18431373}
   colorAlert: {r: 1, g: 0, b: 0, a: 1}

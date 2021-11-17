@@ -13,6 +13,24 @@ namespace VisionConeDemo
         public Transform viewpointTransform;
         public Color currentColor = Color.white;
         
+        public Vector3 ViewPosition {
+            get
+            {
+                if (viewpointTransform != null)
+                    return viewpointTransform.position;
+                return transform.position;
+            }
+        }
+        
+        public Vector3 ViewDirection {
+            get
+            {
+                if (viewpointTransform != null)
+                    return viewpointTransform.forward;
+                return transform.forward;
+            }
+        }
+        
         void RegisterVisionConeComponent()
         {
             VisionConeManager.Get.RegisterVisionCone(this);

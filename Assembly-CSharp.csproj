@@ -61,6 +61,7 @@
      <Compile Include="Assets\Scripts\VisionCone\VisionConeRenderPassFeature.cs" />
      <Compile Include="Assets\Scripts\VisionCone\VisionConeManager.cs" />
      <Compile Include="Assets\Scripts\VisionCone\VisionConeData.cs" />
+     <Compile Include="Assets\TargetManager.cs" />
      <None Include="Assets\Shaders\VisionConeShader.shader" />
      <None Include="Assets\Shaders\VisionConePass.hlsl" />
      <None Include="Assets\Shaders\VisionConeDepth.shader" />

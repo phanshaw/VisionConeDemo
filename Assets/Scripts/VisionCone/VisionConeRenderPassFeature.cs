@@ -155,7 +155,7 @@ namespace VisionConeDemo
                         var pos = data.PositionWS;
                         var rot = Quaternion.LookRotation(data.Direction, Vector3.up);
                         var fov = data.FOVDegrees;
-                        var range = data.Radius;
+                        var range = data.Radius * 2;
 
                         var t = _proxyCamera.transform;
                         t.position = pos;

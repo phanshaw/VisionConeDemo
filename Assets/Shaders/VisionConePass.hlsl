@@ -143,13 +143,14 @@ float4 VisionConesFrag (Varyings input) : SV_Target
 
         // Now step it to get a mask of our cone shape. 
         float angleMask = step(dp_angle, data_angle);
+        
+        float occluded = SampleVisionConeDepth(i, posWS);
 
         // Add some nice details on the outer edge of the vision cone
         float u = ATan2Nrm(relPos.x, relPos.z);
-        float dashedRing = step(0.6, frac(u * 100)) * step(1-v, 0.01) * angleMask;
+        float dashedRing = step(0.6, frac(u * 100)) * step(1-v, 0.01) * occluded * angleMask;
         float inner_mask = step(v, 0.05);
-        float occluded = SampleVisionConeDepth(i, posWS);
-        float result = saturate((dashedRing + angleMask * occluded * (1-v) * t) - inner_mask);
+        float result = saturate(((dashedRing + angleMask * occluded * max(1-v, 0.1) - inner_mask) * t));
         
         contribution = max(contribution, result * data.color);
     }
