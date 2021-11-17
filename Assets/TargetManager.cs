@@ -25,7 +25,7 @@ public class TargetManager : MonoBehaviour
         
     #endregion
     
-    public Transform _mouseObject;
+    public Transform Player;
     public Camera SceneCamera;
     
     private Vector3 _mousePosWS;
@@ -49,9 +49,9 @@ public class TargetManager : MonoBehaviour
         if (Physics.Raycast(ray, out RaycastHit hitInfo, 1000.0f, playerLayer ))
         {
             MousePosWS = hitInfo.point;
-            if (_mouseObject != null)
+            if (Player != null)
             {
-                _mouseObject.transform.SetPositionAndRotation(MousePosWS, Quaternion.identity);
+                Player.transform.SetPositionAndRotation(MousePosWS, Quaternion.identity);
             }
         }
     }

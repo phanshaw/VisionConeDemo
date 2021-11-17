@@ -167,7 +167,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 663899998ca4af845937056b0bcd881b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _mouseObject: {fileID: 716955922}
+  Player: {fileID: 716955922}
   SceneCamera: {fileID: 1687258584}
   MousePosWS: {x: 0, y: 0, z: 0}
 --- !u!1 &42752541

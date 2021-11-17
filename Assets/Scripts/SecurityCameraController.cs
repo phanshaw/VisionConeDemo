@@ -24,12 +24,11 @@ public class SecurityCameraController : MonoBehaviour
     public Transform pivotYaw;
 
     private Transform _seekTarget;
-    private bool _canSeeTarget;
     private VisionConeComponent _visionConeComponent;
 
     private SecurityCameraState _state;
 
-    private float _counter = 0;
+    private float _transitionTimer = 0;
     private float _randomOffset;
     private float _currentRadius;
     private float _currentFOV;
@@ -48,7 +47,7 @@ public class SecurityCameraController : MonoBehaviour
         _currentRadius = settings.radiusSeeking;
         _currentFOV = settings.fovDegreeSeeking;
         
-        SetVisionConeValues();
+        UpdateVisionConeValues();
     }
 
     private void Update()
@@ -59,29 +58,19 @@ public class SecurityCameraController : MonoBehaviour
                 HandleSeek();
                 break;
             case SecurityCameraState.TransitionSeekToAlert:
-                HandleTransition();
+                HandleTransitionToAlert();
                 break;
             case SecurityCameraState.Alert:
                 HandleAlert();
                 break;
             case SecurityCameraState.TransitionAlertToSeek:
-                HandleTransition();
+                HandleTransitionToSeek();
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
         }
 
-        // TODO: Manage cooldowns and transitions
-        if (CheckForTarget())
-        {
-            _state = SecurityCameraState.Alert;
-        }
-        else
-        {
-            _state = SecurityCameraState.Seeking;
-        }
-
-        SetVisionConeValues();
+        UpdateVisionConeValues();
     }
 
     bool InsideBoundsSphere(Vector3 position, float radius)
@@ -89,21 +78,63 @@ public class SecurityCameraController : MonoBehaviour
         return Vector3.Dot(position, position) <= radius * radius;
     }
 
-    void HandleTransition()
+    void HandleTransitionToAlert()
     {
-        // Transition from one state to another. 
+        _transitionTimer++;
+        var t = _transitionTimer / settings.durationSeekToAlert;
+        var curveValue = settings.seekToAlertAnimationCurve.Evaluate(t);
+        
+        if (t >= 1)
+        {
+            ChangeState(SecurityCameraState.Alert);
+            return;
+        }
+        
+        _currentColor = Color.Lerp(settings.colorSeeking, settings.colorAlert, curveValue);
+        _currentRadius = Mathf.Lerp(settings.radiusSeeking, settings.radiusAlert, curveValue);
+        _currentFOV = Mathf.Lerp(settings.fovDegreeSeeking, settings.fovDegreeAlert, curveValue);
+    }
+
+    void HandleTransitionToSeek()
+    {
+        _transitionTimer++;
+        var t = _transitionTimer / settings.durationSeekToAlert;
+
+        if (t >= 1)
+        {
+            ChangeState(SecurityCameraState.Seeking);
+            return;
+        }
+
+        var curveValue = settings.alertToSeekAnimationCurve.Evaluate(t);
+        
+        _currentColor = Color.Lerp(settings.colorAlert, settings.colorSeeking, curveValue);
+        _currentRadius = Mathf.Lerp(settings.radiusAlert, settings.radiusSeeking, curveValue);
+        _currentFOV = Mathf.Lerp(settings.fovDegreeAlert, settings.fovDegreeSeeking, curveValue);
     }
 
     void HandleSeek()
     {
-        _counter += Time.deltaTime;
-        var yawTarget = Mathf.Sin((_counter + _randomOffset) * settings.rotationSpeed) * settings.rotationDegrees;
-        var localRotation = transform.localRotation.eulerAngles;
-        localRotation.y = yawTarget;
-        
-        pivotYaw.localRotation = Quaternion.Euler(localRotation);
+        if (CheckForTarget())
+        {
+            ChangeState(SecurityCameraState.TransitionSeekToAlert);
+        }
     }
     
+    void HandleAlert()
+    {
+        if (!CheckForTarget())
+        {
+            ChangeState(SecurityCameraState.TransitionAlertToSeek);
+        }
+    }
+
+    void ChangeState(SecurityCameraState newState)
+    {
+        _transitionTimer = 0;
+        _state = newState;
+    }
+
     bool CheckForTarget()
     {
         var target = TargetManager.Get.MousePosWS;
@@ -127,21 +158,18 @@ public class SecurityCameraController : MonoBehaviour
             {
                 if (hitInfo.collider.gameObject.layer == LayerMask.NameToLayer("Player"))
                 {
+                    _seekTarget = TargetManager.Get.Player;
                     return true;
                 }
             }
         }
 
+        _seekTarget = null;
         return false;
 
     }
 
-    void HandleAlert()
-    {
-        // Stare at the target fiercely. 
-    }
-
-    private void SetVisionConeValues()
+    private void UpdateVisionConeValues()
     {
         switch (_state)
         {
