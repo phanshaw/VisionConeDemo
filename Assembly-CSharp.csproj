@@ -62,10 +62,10 @@
      <Compile Include="Assets\Scripts\VisionCone\VisionConeRenderPassFeature.cs" />
      <Compile Include="Assets\Scripts\VisionCone\VisionConeManager.cs" />
      <Compile Include="Assets\Scripts\VisionCone\VisionConeData.cs" />
-     <None Include="Assets\Shaders\VisionConeShader.shader" />
-     <None Include="Assets\Shaders\VisionConePass.hlsl" />
-     <None Include="Assets\Shaders\VisionConeDepth.shader" />
-     <None Include="Assets\Shaders\VisionConeDepthPass.hlsl" />
+     <None Include="Assets\Resources\Shaders\VisionConeShader.shader" />
+     <None Include="Assets\Resources\Shaders\ScreenSpaceVisionConeAdditive.hlsl" />
+     <None Include="Assets\Resources\Shaders\VisionConeDepth.shader" />
+     <None Include="Assets\Resources\Shaders\VisionConeDepthPass.hlsl" />
  <Reference Include="UnityEngine">
  <HintPath>C:/Program Files/Unity/Hub/Editor/2020.3.21f1/Editor/Data/Managed/UnityEngine/UnityEngine.dll</HintPath>
  </Reference>

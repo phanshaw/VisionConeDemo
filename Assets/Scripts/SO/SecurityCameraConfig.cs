@@ -24,11 +24,15 @@ namespace SO
         public float rotationDegrees = 45;
         
         [SerializeField] 
+        [Range(0.1f, 1f)]
+        public float minRadius = 1;
+        
+        [SerializeField] 
         [Range(0.1f, 15f)]
         public float radiusSeeking = 5;
         
         [SerializeField] 
-        [Range(5f, 180f)]
+        [Range(45f, 120f)]
         public float fovDegreeSeeking = 90;
         
         [SerializeField] 
@@ -36,7 +40,7 @@ namespace SO
         public float radiusAlert = 10;
         
         [SerializeField] 
-        [Range(5f, 180f)]
+        [Range(45f, 120f)]
         public float fovDegreeAlert = 35;
         
         [SerializeField]

@@ -2,6 +2,7 @@ using System;
 using SO;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using VisionConeDemo;
 using Random = UnityEngine.Random;
 
@@ -73,11 +74,6 @@ public class SecurityCameraController : MonoBehaviour
         UpdateVisionConeValues();
     }
 
-    bool InsideBoundsSphere(Vector3 position, float radius)
-    {
-        return Vector3.Dot(position, position) <= radius * radius;
-    }
-
     void HandleTransitionToAlert()
     {
         _transitionTimer += Time.deltaTime;
@@ -93,12 +89,22 @@ public class SecurityCameraController : MonoBehaviour
         _currentColor = Color.Lerp(settings.colorSeeking, settings.colorAlert, curveValue);
         _currentRadius = Mathf.Lerp(settings.radiusSeeking, settings.radiusAlert, curveValue);
         _currentFOV = Mathf.Lerp(settings.fovDegreeSeeking, settings.fovDegreeAlert, curveValue);
+        
+        LookAtTargetWithinLimit();
     }
 
     void HandleTransitionToSeek()
     {
         _transitionTimer += Time.deltaTime;
-        var t = _transitionTimer / settings.durationSeekToAlert;
+        var t = _transitionTimer / settings.durationAlertToSeek;
+        
+        // Check if we see the target first! 
+        if (CheckForTarget())
+        {
+            var customTimer = settings.durationSeekToAlert * (1-t);
+            ChangeState(SecurityCameraState.TransitionSeekToAlert, customTimer);
+            return;
+        }
 
         if (t >= 1)
         {
@@ -126,35 +132,81 @@ public class SecurityCameraController : MonoBehaviour
         if (!CheckForTarget())
         {
             ChangeState(SecurityCameraState.TransitionAlertToSeek);
+            return;
         }
+
+        LookAtTargetWithinLimit();
     }
 
-    void ChangeState(SecurityCameraState newState)
+    private bool WithinRangeCheck(Vector3 p1, Vector3 p2, float rad)
+    {
+        return !((p1 - p2).sqrMagnitude > rad *  rad);
+    }
+
+    private void LookAtTargetWithinLimit()
+    {
+        var targetPos = _seekTarget.position;
+        var viewPos3D = _visionConeComponent.ViewPosition;
+        var lookDir = targetPos - pivotYaw.position;
+        var rotation = Quaternion.LookRotation(lookDir);
+        
+        // Flatten to match the way we are rendering
+        var targetPos2D = targetPos;
+        targetPos2D.y = 0;
+        var viewPos2D = viewPos3D;
+        viewPos2D.y = 0;
+        if(WithinRangeCheck(targetPos2D, viewPos2D, settings.minRadius))
+            return;
+        
+        var angle = rotation.eulerAngles.y;
+        if (angle > 180)
+            angle -= 360;
+
+        if (Mathf.Abs(angle) < settings.rotationDegrees)
+            pivotYaw.rotation = rotation;
+    }
+
+    void ChangeState(SecurityCameraState newState, float _timerOverride = 0)
     {
         _transitionTimer = 0;
+
+        if (_timerOverride != 0)
+            _transitionTimer = _timerOverride;
+        
         _state = newState;
     }
 
     bool CheckForTarget()
     {
-        var target = TargetManager.Get.MousePosWS;
-        if (!InsideBoundsSphere(target, _visionConeComponent.Radius)) 
+        var targetPos = TargetManager.Get.MousePosWS;
+        var viewPos3D = _visionConeComponent.ViewPosition;
+        var radius = _visionConeComponent.Radius;
+
+        // Flatten to match the way we are rendering
+        var targetPos2D = targetPos;
+        targetPos2D.y = 0;
+        var viewPos2D = viewPos3D;
+        viewPos2D.y = 0;
+
+        if ((targetPos2D - viewPos2D).sqrMagnitude > radius * radius)
             return false;
         
-        // Rebuild the arc
-        // cosine between those two angles
-        var viewPos = _visionConeComponent.ViewPosition;
         var viewDir = _visionConeComponent.ViewDirection;
-        var relPos = target - viewPos;
-        var nrmRelPos = Vector3.Normalize(relPos);
-        var dp = Vector3.Dot( viewDir, Vector3.Normalize(relPos));
-
-        // get angle from the cosine from 0 (180) to 1 (90)
-        var dp_angle = ((Mathf.Acos(dp) / Mathf.PI) * 180);
-        if (dp_angle <= _currentFOV * 0.5f)
+        viewDir.y = 0;
+        viewDir.Normalize();
+        
+        var targetRelativeDir = Vector3.Normalize(targetPos - viewPos3D);
+        targetRelativeDir.y = 0;
+        targetRelativeDir.Normalize();
+        
+        var viewRelativeAngle = Vector3.Angle(viewDir, targetRelativeDir);
+        if (viewRelativeAngle <= _currentFOV * 0.5f)
         {
-            // Now do a raycast to see if we can really see! 
-            if (Physics.Raycast(viewPos, nrmRelPos, out RaycastHit hitInfo))
+            var rayDir = Vector3.Normalize(targetPos - viewPos3D);
+            
+            Debug.DrawRay(viewPos3D, rayDir * 10);
+            
+            if (Physics.Raycast(viewPos3D, rayDir, out var hitInfo))
             {
                 if (hitInfo.collider.gameObject.layer == LayerMask.NameToLayer("Player"))
                 {

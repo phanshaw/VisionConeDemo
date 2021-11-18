@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f26be917ffc1c0b4f81c75df5ce20f4d, type: 3}
   m_Name: SecurityCameraConfig
   m_EditorClassIdentifier: 
-  durationSeekToAlert: 1
+  durationSeekToAlert: 0.15
   durationAlertToSeek: 2
   seekToAlertAnimationCurve:
     serializedVersion: 2
@@ -44,18 +44,18 @@ MonoBehaviour:
     - serializedVersion: 3
       time: 0
       value: 0
-      inSlope: 1
-      outSlope: 1
-      tangentMode: 34
+      inSlope: 2
+      outSlope: 2
+      tangentMode: 0
       weightedMode: 0
       inWeight: 0
       outWeight: 0
     - serializedVersion: 3
       time: 1
       value: 1
-      inSlope: 1
-      outSlope: 1
-      tangentMode: 34
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
       weightedMode: 0
       inWeight: 0
       outWeight: 0
@@ -63,10 +63,11 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   rotationSpeed: 0.5
-  rotationDegrees: 45
-  radiusSeeking: 4
+  rotationDegrees: 80
+  minRadius: 0.4
+  radiusSeeking: 3
   fovDegreeSeeking: 90
-  radiusAlert: 8
-  fovDegreeAlert: 90
-  colorSeeking: {r: 0, g: 0.23584908, b: 0, a: 0.18431373}
+  radiusAlert: 4
+  fovDegreeAlert: 120
+  colorSeeking: {r: 1, g: 0.56096756, b: 0, a: 0.18431373}
   colorAlert: {r: 1, g: 0, b: 0, a: 1}

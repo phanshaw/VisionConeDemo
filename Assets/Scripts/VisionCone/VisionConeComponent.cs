@@ -30,7 +30,11 @@ namespace VisionConeDemo
         public VisionConeData GetData()
         {
             var t = viewpointTransform ? viewpointTransform : transform;
-            return new VisionConeData(true, Radius, FovDegrees, t.position, t.forward, currentColor);
+            var forward2D = t.forward;
+            forward2D.y = 0;
+            forward2D.Normalize();
+            
+            return new VisionConeData(true, Radius, FovDegrees, t.position, forward2D, currentColor);
         }
 
         private void Start()
