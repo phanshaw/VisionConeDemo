@@ -143,11 +143,20 @@ public class SecurityCameraController : MonoBehaviour
         return !((p1 - p2).sqrMagnitude > rad *  rad);
     }
 
-    private void LookAtTargetWithinLimit()
+    private void LookAtTargetWithinLimit() 
     {
         var targetPos = _seekTarget.position;
         var viewPos3D = _visionConeComponent.ViewPosition;
         var lookDir = targetPos - pivotYaw.position;
+        
+        var targetRelativeDir = Vector3.Normalize(targetPos - viewPos3D);
+        targetRelativeDir.y = 0;
+        targetRelativeDir.Normalize();
+        
+        var viewRelativeAngle = Vector3.Angle(_visionConeComponent.transform.forward, targetRelativeDir);
+        if (viewRelativeAngle > settings.rotationDegrees)
+            return;
+        
         var rotation = Quaternion.LookRotation(lookDir);
         
         // Flatten to match the way we are rendering
@@ -158,12 +167,7 @@ public class SecurityCameraController : MonoBehaviour
         if(WithinRangeCheck(targetPos2D, viewPos2D, settings.minRadius))
             return;
         
-        var angle = rotation.eulerAngles.y;
-        if (angle > 180)
-            angle -= 360;
-
-        if (Mathf.Abs(angle) < settings.rotationDegrees)
-            pivotYaw.rotation = rotation;
+        pivotYaw.rotation = rotation;
     }
 
     void ChangeState(SecurityCameraState newState, float _timerOverride = 0)

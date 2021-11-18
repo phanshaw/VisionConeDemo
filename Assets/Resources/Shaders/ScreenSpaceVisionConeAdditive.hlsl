@@ -147,18 +147,27 @@ float4 VisionConesFrag (Varyings input) : SV_Target
         float occluded = SampleVisionConeDepth(i, posWS);
 
         // We want a consistent size here so we can't use v
-        float radPulseGradient = length(relPos2D) / 4;
-        float pulseShape = frac(radPulseGradient * radPulseGradient * 4);
-        float value = frac(_Time * 8).x;
-        float m1 = step(pulseShape, value - 0.05);
-        float m2 = step(pulseShape, value);
+        float grad = length(relPos2D) / 4;
 
-        float pulse = (m2 - m1) * angleMask * (1-radPulseGradient);
+        // Pulse fast at start slow at end
+        grad = grad * grad * grad;
 
+        // Repetitions
+        float g1 = frac(grad * 8);
+
+        // Speed
+        float time = frac(_Time * 10);
+
+        // Offset the gradient value to shift the pulse along. 
+        float pulse = step( frac(g1 - time), 0.1);
+
+        // Mask the pulse
+        pulse *= angleMask * (1-v);
+        
         // Add some nice details on the outer edge of the vision cone
         float u = ATan2Nrm(relPos.x, relPos.z);
         float dashedRing = step(0.6, frac(u * 100)) * step(1-v, 0.01) * occluded * angleMask;
-        float inner_mask = step(v, 0.05);
+        float inner_mask = step(v, 0.25);
         float result = saturate(((pulse + dashedRing + angleMask * occluded * max(1-v, 0.2) - inner_mask) * t));
         
         contribution = max(contribution, result * data.color);
