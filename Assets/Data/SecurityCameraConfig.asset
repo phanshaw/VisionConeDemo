@@ -42,22 +42,22 @@ MonoBehaviour:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
-      time: 0.25
+      time: 0.5
       value: 0
-      inSlope: 0
-      outSlope: 0
+      inSlope: 4.6412024
+      outSlope: 4.6412024
       tangentMode: 0
       weightedMode: 0
       inWeight: 0
-      outWeight: 0
+      outWeight: 0.030716896
     - serializedVersion: 3
       time: 1
       value: 1
-      inSlope: 2
-      outSlope: 2
+      inSlope: 0.391617
+      outSlope: 0.391617
       tangentMode: 0
       weightedMode: 0
-      inWeight: 0
+      inWeight: 0.07875812
       outWeight: 0
     m_PreInfinity: 2
     m_PostInfinity: 2
@@ -69,5 +69,7 @@ MonoBehaviour:
   fovDegreeSeeking: 90
   radiusAlert: 4
   fovDegreeAlert: 120
-  colorSeeking: {r: 1, g: 0.56096756, b: 0, a: 0.18431373}
-  colorAlert: {r: 1, g: 0, b: 0, a: 1}
+  visionConeColorSeeking: {r: 1, g: 0.7526976, b: 0, a: 1}
+  visionConeColorAlert: {r: 1, g: 0, b: 0, a: 1}
+  cameraPropColorSeeking: {r: 0, g: 1, b: 0, a: 1}
+  cameraPropColorAlert: {r: 1, g: 0, b: 0, a: 1}

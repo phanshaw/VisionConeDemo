@@ -22,6 +22,8 @@ public class SecurityCameraController : MonoBehaviour
     [Header("Structure")]
     public Transform pivotYaw;
 
+    public Light cameraLight;
+    
     private Transform _seekTarget;
     private VisionConeComponent _visionConeComponent;
 
@@ -42,7 +44,7 @@ public class SecurityCameraController : MonoBehaviour
         _visionConeComponent = GetComponent<VisionConeComponent>();
         _state = SecurityCameraState.Seeking;
 
-        _currentColor = settings.colorSeeking;
+        _currentColor = settings.visionConeColorSeeking;
         _currentRadius = settings.radiusSeeking;
         _currentFOV = settings.fovDegreeSeeking;
         
@@ -84,11 +86,13 @@ public class SecurityCameraController : MonoBehaviour
             return;
         }
         
-        _currentColor = Color.Lerp(settings.colorSeeking, settings.colorAlert, curveValue);
+        _currentColor = Color.Lerp(settings.visionConeColorSeeking, settings.visionConeColorAlert, curveValue);
         _currentRadius = Mathf.Lerp(settings.radiusSeeking, settings.radiusAlert, curveValue);
         _currentFOV = Mathf.Lerp(settings.fovDegreeSeeking, settings.fovDegreeAlert, curveValue);
         
         LookAtTargetWithinLimit();
+
+        cameraLight.color = settings.cameraPropColorAlert;
     }
 
     void HandleTransitionToSeek()
@@ -112,7 +116,7 @@ public class SecurityCameraController : MonoBehaviour
 
         var curveValue = settings.alertToSeekAnimationCurve.Evaluate(t);
         
-        _currentColor = Color.Lerp(settings.colorAlert, settings.colorSeeking, curveValue);
+        _currentColor = Color.Lerp(settings.visionConeColorAlert, settings.visionConeColorSeeking, curveValue);
         _currentRadius = Mathf.Lerp(settings.radiusAlert, settings.radiusSeeking, curveValue);
         _currentFOV = Mathf.Lerp(settings.fovDegreeAlert, settings.fovDegreeSeeking, curveValue);
     }
@@ -123,6 +127,8 @@ public class SecurityCameraController : MonoBehaviour
         {
             ChangeState(SecurityCameraState.TransitionSeekToAlert);
         }
+        
+        cameraLight.color = settings.cameraPropColorSeeking;
     }
     
     void HandleAlert()
@@ -134,6 +140,8 @@ public class SecurityCameraController : MonoBehaviour
         }
 
         LookAtTargetWithinLimit();
+        
+        cameraLight.color = settings.cameraPropColorAlert;
     }
 
     private bool WithinRangeCheck(Vector3 p1, Vector3 p2, float rad)

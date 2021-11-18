@@ -44,9 +44,15 @@ namespace SO
         public float fovDegreeAlert = 35;
         
         [SerializeField]
-        public Color colorSeeking = Color.green;
+        public Color visionConeColorSeeking = Color.green;
 
         [SerializeField] 
-        public Color colorAlert = Color.red;
+        public Color visionConeColorAlert = Color.red;
+        
+        [SerializeField]
+        public Color cameraPropColorSeeking = Color.green;
+
+        [SerializeField] 
+        public Color cameraPropColorAlert = Color.red;
     }
 }
