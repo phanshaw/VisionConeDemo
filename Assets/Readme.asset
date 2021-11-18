@@ -16,12 +16,15 @@ MonoBehaviour:
   title: Screen Space Vision Cones
   sections:
   - heading: Vision Cone Demo
-    text: An example of screen space vision cone rendering.
+    text: Move your mouse around and don't get seen!
     linkText: 
     url: 
   - heading: 
-    text: 'Here is an example of using a custom RenderFeature to add a screen-space
-      vision cone pass. '
+    text: 'In this project I''ve put together a basic vision cone renderer. On the
+      gameplay side I test to see if our target is in view via raycasts and some
+      simple range and field of view tests. On the GPU side I render a depth pass
+      to mask where we can and cannot see. Finally we composite the vision cones
+      in screen space for the final result. '
     linkText: 
     url: 
   - heading: 
@@ -42,6 +45,10 @@ MonoBehaviour:
   - heading: 
     text: 'Please see Assets/Resources/Shaders/ScreenSpaceVisionConeAdditive.hlsl
       for an example of the vision cone shader. '
+    linkText: 
+    url: 
+  - heading: Pete Hanshaw
+    text: 
     linkText: 
     url: 
   loadedLayout: 1
