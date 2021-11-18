@@ -1,16 +1,18 @@
 using UnityEngine;
 
-namespace VisionConeDemo
+namespace VisionCone
 {
     public static class VisionConeShaderConstants
     {
-        public static int MAX_VISION_CONES = 16;
+        public static readonly int MAX_VISION_CONES = 16;
         
-        public static int packedDataEnabledRadArcID = Shader.PropertyToID("_packedDataEnabledRadArc");
-        public static int conePosArrayID = Shader.PropertyToID("_conePosArray");
-        public static int coneDirArrayID = Shader.PropertyToID("_coneDirArray");
-        public static int coneColorArrayID = Shader.PropertyToID("_coneColorArray");
-        public static int visionConeZBufferParamsID = Shader.PropertyToID("_visionConeZBufferParams");
-        public static int worldToVisionConeMatricesID = Shader.PropertyToID("_WorldToVisionConeMatrices");
+        public static readonly int FrustrumCornersWSID = Shader.PropertyToID("_FrustumCornersWS");
+        public static readonly int CameraWSID = Shader.PropertyToID("_CameraWS");
+        public static readonly int PackedDataEnabledRadArcID = Shader.PropertyToID("_packedDataEnabledRadArc");
+        public static readonly int ConePosArrayID = Shader.PropertyToID("_conePosArray");
+        public static readonly int ConeDirArrayID = Shader.PropertyToID("_coneDirArray");
+        public static readonly int ConeColorArrayID = Shader.PropertyToID("_coneColorArray");
+        public static readonly int VisionConeZBufferParamsID = Shader.PropertyToID("_visionConeZBufferParams");
+        public static readonly int WorldToVisionConeMatricesID = Shader.PropertyToID("_WorldToVisionConeMatrices");
     }
 }

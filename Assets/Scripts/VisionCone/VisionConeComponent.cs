@@ -1,10 +1,9 @@
+using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
-using UnityEngine;
-
-namespace VisionConeDemo
+namespace VisionCone
 {
     public class VisionConeComponent : MonoBehaviour
     {
@@ -17,12 +16,12 @@ namespace VisionConeDemo
 
         public Vector3 ViewDirection => viewpointTransform.forward;
 
-        void RegisterVisionConeComponent()
+        private void RegisterVisionConeComponent()
         {
             VisionConeManager.Get.RegisterVisionCone(this);
         }
-    
-        void DeRegisterVisionConeComponent()
+
+        private void DeRegisterVisionConeComponent()
         {
             VisionConeManager.Get.DeregisterVisionCone(this);
         }
@@ -54,19 +53,11 @@ namespace VisionConeDemo
         }
         
 #if UNITY_EDITOR
-
         private void OnDrawGizmosSelected()
         {
-            // This draws the arc from the feet, which is the intended rendering of the 2.5d vision cones.
-
-            var t = viewpointTransform != null ? viewpointTransform : transform;
-            var pos = t.position;
-            pos.y = transform.position.y; // Floor it
-            Handles.Label(pos, $"Debug Vision Cone: Rad {Radius} FOV {FovDegrees}");
-
-            Handles.color = new Color(1f, 0, 0, 0.1f);
-            var centeredForward = Quaternion.AngleAxis(-FovDegrees * 0.5f, Vector3.up) * t.forward;
-            Handles.DrawSolidArc(pos, t.up, centeredForward, FovDegrees, Radius);
+            var viewportTransform = viewpointTransform != null ? viewpointTransform : transform;
+            var pos = viewportTransform.position;
+            Handles.Label(pos, $"Vision Cone: Rad {Radius} FOV {FovDegrees}");
         }
 #endif
     }

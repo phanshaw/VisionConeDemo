@@ -1,7 +1,6 @@
-using System.Runtime.InteropServices;
 using UnityEngine;
 
-namespace VisionConeDemo
+namespace VisionCone
 {
     public struct VisionConeData
     {
@@ -21,7 +20,5 @@ namespace VisionConeDemo
             Direction = direction;
             ConeColor = color;
         }
-
-        public static int SizeOf = Marshal.SizeOf(typeof(VisionConeData));
     }
 }

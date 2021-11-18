@@ -1,9 +1,7 @@
 using System;
 using SO;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using VisionConeDemo;
+using VisionCone;
 using Random = UnityEngine.Random;
 
 public enum SecurityCameraState
@@ -170,12 +168,12 @@ public class SecurityCameraController : MonoBehaviour
         pivotYaw.rotation = rotation;
     }
 
-    void ChangeState(SecurityCameraState newState, float _timerOverride = 0)
+    void ChangeState(SecurityCameraState newState, float timerOverride = 0)
     {
         _transitionTimer = 0;
 
-        if (_timerOverride != 0)
-            _transitionTimer = _timerOverride;
+        if (timerOverride != 0)
+            _transitionTimer = timerOverride;
         
         _state = newState;
     }
