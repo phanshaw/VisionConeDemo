@@ -1,3 +1,6 @@
+![I see you!](https://github.com/phanshaw/VisionConeDemo/blob/master/SourceArt/ReadmeImage.png?raw=true)
+
+
 # VisionConeDemo
 A demo of using URP RenderFeatures to add a vision cone rendering pass.
 
