@@ -28,7 +28,9 @@ The example code here is written specifically for this example project, based of
 References: 
 
 Catlike Coding's spotlight shadows overview:
+
 https://catlikecoding.com/unity/tutorials/scriptable-render-pipeline/spotlight-shadows/
 
 OpenGL shadow mapping to get my head around depth tested shadows (again)
+
 http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-16-shadow-mapping/
