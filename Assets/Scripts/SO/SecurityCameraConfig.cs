@@ -51,6 +51,9 @@ namespace SO
         
         [SerializeField]
         public Color cameraPropColorSeeking = Color.green;
+        
+        [SerializeField]
+        public Color cameraPropColorConfused = new Color(1, 0.5f, 0, 1);
 
         [SerializeField] 
         public Color cameraPropColorAlert = Color.red;

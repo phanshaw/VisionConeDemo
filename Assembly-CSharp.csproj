@@ -55,14 +55,14 @@
      <Compile Include="Assets\Scripts\VisionCone\VisionConeShaderConstants.cs" />
      <Compile Include="Assets\Scripts\VisionCone\VisionConeComponent.cs" />
      <Compile Include="Assets\TutorialInfo\Scripts\Readme.cs" />
-     <Compile Include="Assets\TargetManager.cs" />
+     <Compile Include="Assets\Scripts\TargetManager.cs" />
      <Compile Include="Assets\Scripts\SO\SecurityCameraConfig.cs" />
      <Compile Include="Assets\Scripts\SecurityCameraController.cs" />
      <Compile Include="Assets\Scripts\VisionCone\VisionConeRenderPassFeature.cs" />
      <Compile Include="Assets\Scripts\VisionCone\VisionConeManager.cs" />
      <Compile Include="Assets\Scripts\VisionCone\VisionConeData.cs" />
      <None Include="Assets\Resources\Shaders\VisionConeShader.shader" />
-     <None Include="Assets\Resources\Shaders\ScreenSpaceVisionConeAdditive.hlsl" />
+     <None Include="Assets\Resources\Shaders\ScreenSpaceVisionConeAdditivePass.hlsl" />
      <None Include="Assets\Resources\Shaders\VisionConeDepth.shader" />
      <None Include="Assets\Resources\Shaders\VisionConeDepthPass.hlsl" />
  <Reference Include="UnityEngine">

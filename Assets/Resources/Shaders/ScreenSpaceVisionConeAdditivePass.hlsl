@@ -54,6 +54,11 @@ VisionConeData GetGameplayVisionConeData(int i)
     return ret;
 }
 
+float ATan2Nrm(float a, float b)
+{
+    return (atan2(a, b) + PI) / (PI * 2);
+}
+
 float SampleVisionConeDepth(int index, float3 worldPos)
 {
     // https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
@@ -66,11 +71,6 @@ float SampleVisionConeDepth(int index, float3 worldPos)
     // TODO: Quick depth bias here, could be a property.
     float currentDepth = shadowPos.z + 0.0001;
     return currentDepth >= closestDepth  ? 1.0 : 0.0;  
-}
-
-float ATan2Nrm(float a, float b)
-{
-    return (atan2(a, b) + PI) / (PI * 2);
 }
     
 struct Attributes
@@ -156,7 +156,7 @@ float4 VisionConesFrag (Varyings input) : SV_Target
         float g1 = frac(grad * 8);
 
         // Speed
-        float time = frac(_Time * 10);
+        float time = frac(_Time * 10).x;
 
         // Offset the gradient value to shift the pulse along. 
         float pulse = step( frac(g1 - time), 0.1);

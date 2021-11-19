@@ -18,7 +18,7 @@ Shader "Hidden/ScreenSpaceVisionConeAdditive"
 
             HLSLPROGRAM
 
-            #include "ScreenSpaceVisionConeAdditive.hlsl"
+            #include "ScreenSpaceVisionConeAdditivePass.hlsl" 
 
             #pragma prefer_hlslcc gles
             #pragma vertex Vertex

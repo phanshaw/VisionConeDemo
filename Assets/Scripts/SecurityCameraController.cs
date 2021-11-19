@@ -119,6 +119,14 @@ public class SecurityCameraController : MonoBehaviour
         _currentColor = Color.Lerp(settings.visionConeColorAlert, settings.visionConeColorSeeking, curveValue);
         _currentRadius = Mathf.Lerp(settings.radiusAlert, settings.radiusSeeking, curveValue);
         _currentFOV = Mathf.Lerp(settings.fovDegreeAlert, settings.fovDegreeSeeking, curveValue);
+        
+        // Make the light flash between states to indicate confusion.
+        var tCol = (Mathf.Sin(Time.timeSinceLevelLoad * 15) + 1) * 0.5f;
+        
+        // Make a nicer transition interpolation
+        float tColCubed = tCol * tCol * tCol;
+        var color = Color.Lerp(settings.cameraPropColorAlert, settings.cameraPropColorConfused, tColCubed);
+        cameraLight.color = color;
     }
 
     void HandleSeek()
