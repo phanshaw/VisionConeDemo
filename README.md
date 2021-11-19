@@ -26,6 +26,7 @@ Note:
 The example code here is written specifically for this example project, based off of prior experience and online reference. 
 
 References: 
+
 Catlike Coding's spotlight shadows overview:
 https://catlikecoding.com/unity/tutorials/scriptable-render-pipeline/spotlight-shadows/
 
